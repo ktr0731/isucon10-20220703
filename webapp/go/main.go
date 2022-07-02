@@ -587,9 +587,9 @@ func getChairSearchCondition(c echo.Context) error {
 }
 
 func getLowPricedChair(c echo.Context) error {
-	var chairs []Chair
-	query := `SELECT * FROM chair WHERE stock > 0 ORDER BY price ASC, id ASC LIMIT ?`
-	err := db.Select(&chairs, query, Limit)
+	var allChairs []Chair
+	query := `SELECT * FROM chair ORDER BY price ASC, id ASC LIMIT ?`
+	err := db.Select(&allChairs, query, Limit+80) // 余分に取って捨てる
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.Logger().Error("getLowPricedChair not found")
@@ -597,6 +597,17 @@ func getLowPricedChair(c echo.Context) error {
 		}
 		c.Logger().Errorf("getLowPricedChair DB execution error : %v", err)
 		return c.NoContent(http.StatusInternalServerError)
+	}
+
+	chairs := make([]Chair, 0, len(allChairs))
+	for _, c := range allChairs {
+		if c.Stock > 0 {
+			chairs = append(chairs, c)
+		}
+
+		if len(chairs) == Limit {
+			break
+		}
 	}
 
 	return c.JSON(http.StatusOK, ChairListResponse{Chairs: chairs})

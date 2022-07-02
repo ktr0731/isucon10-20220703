@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -eo pipefail
+
+if [ $# -eq 0 ]; then
+  echo "usage: ./scripts/deploy <host> # e.g. isucon10"
+  exit 1
+fi
+
+go_target=/home/isucon/isuumo/webapp/go/isuumo
+
+echo "--- build the binary ---"
+## TODO
+(cd webapp/go && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o isuumo)
+
+echo "--- stopping nginx and app services ---"
+ssh "$1" "sudo service nginx stop && sudo service isuumo.go stop"
+
+echo "--- deploy to remote server ---"
+scp env.sh "$1":~/env.sh
+## TODO
+scp webapp/go/isuumo "$1":$go_target
+scp webapp/mysql/db/0_Schema.sql "$1":/home/isucon/isuumo/webapp/mysql/db/0_Schema.sql
+
+echo "--- starting nginx and app services ---"
+ssh "$1" "sudo service nginx restart && sudo service mysql restart && sudo service isuumo.go restart"
