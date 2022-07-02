@@ -59,18 +59,21 @@ type ChairListResponse struct {
 
 //Estate 物件
 type Estate struct {
-	ID          int64   `db:"id" json:"id"`
-	Thumbnail   string  `db:"thumbnail" json:"thumbnail"`
-	Name        string  `db:"name" json:"name"`
-	Description string  `db:"description" json:"description"`
-	Latitude    float64 `db:"latitude" json:"latitude"`
-	Longitude   float64 `db:"longitude" json:"longitude"`
-	Address     string  `db:"address" json:"address"`
-	Rent        int64   `db:"rent" json:"rent"`
-	DoorHeight  int64   `db:"door_height" json:"doorHeight"`
-	DoorWidth   int64   `db:"door_width" json:"doorWidth"`
-	Features    string  `db:"features" json:"features"`
-	Popularity  int64   `db:"popularity" json:"-"`
+	ID              int64   `db:"id" json:"id"`
+	Thumbnail       string  `db:"thumbnail" json:"thumbnail"`
+	Name            string  `db:"name" json:"name"`
+	Description     string  `db:"description" json:"description"`
+	Latitude        float64 `db:"latitude" json:"latitude"`
+	Longitude       float64 `db:"longitude" json:"longitude"`
+	Address         string  `db:"address" json:"address"`
+	Rent            int64   `db:"rent" json:"rent"`
+	RentClass       int64   `db:"rent_class" json:"-"`
+	DoorHeight      int64   `db:"door_height" json:"doorHeight"`
+	DoorHeightClass int64   `db:"door_height_class" json:"-"`
+	DoorWidth       int64   `db:"door_width" json:"doorWidth"`
+	DoorWidthClass  int64   `db:"door_width_class" json:"-"`
+	Features        string  `db:"features" json:"features"`
+	Popularity      int64   `db:"popularity" json:"-"`
 }
 
 //EstateSearchResponse estate/searchへのレスポンスの形式
@@ -302,7 +305,10 @@ func initialize(c echo.Context) error {
 			mySQLConnectionData.DBName,
 			sqlFile,
 		)
-		if err := exec.Command("bash", "-c", cmdStr).Run(); err != nil {
+		cmd := exec.Command("bash", "-c", cmdStr)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
 			c.Logger().Errorf("Initialize script error : %v", err)
 			return c.NoContent(http.StatusInternalServerError)
 		}
@@ -707,54 +713,51 @@ func searchEstates(c echo.Context) error {
 	params := make([]interface{}, 0)
 
 	if c.QueryParam("doorHeightRangeId") != "" {
-		doorHeight, err := getRange(estateSearchCondition.DoorHeight, c.QueryParam("doorHeightRangeId"))
+		_, err := getRange(estateSearchCondition.DoorHeight, c.QueryParam("doorHeightRangeId"))
 		if err != nil {
 			c.Echo().Logger.Infof("doorHeightRangeID invalid, %v : %v", c.QueryParam("doorHeightRangeId"), err)
 			return c.NoContent(http.StatusBadRequest)
 		}
 
-		if doorHeight.Min != -1 {
-			conditions = append(conditions, "door_height >= ?")
-			params = append(params, doorHeight.Min)
+		n, err := strconv.Atoi(c.QueryParam("doorHeightRangeId"))
+		if err != nil {
+			return c.NoContent(http.StatusBadRequest)
 		}
-		if doorHeight.Max != -1 {
-			conditions = append(conditions, "door_height < ?")
-			params = append(params, doorHeight.Max)
-		}
+
+		conditions = append(conditions, "door_height_class = ?")
+		params = append(params, n)
 	}
 
 	if c.QueryParam("doorWidthRangeId") != "" {
-		doorWidth, err := getRange(estateSearchCondition.DoorWidth, c.QueryParam("doorWidthRangeId"))
+		_, err := getRange(estateSearchCondition.DoorWidth, c.QueryParam("doorWidthRangeId"))
 		if err != nil {
 			c.Echo().Logger.Infof("doorWidthRangeID invalid, %v : %v", c.QueryParam("doorWidthRangeId"), err)
 			return c.NoContent(http.StatusBadRequest)
 		}
 
-		if doorWidth.Min != -1 {
-			conditions = append(conditions, "door_width >= ?")
-			params = append(params, doorWidth.Min)
+		n, err := strconv.Atoi(c.QueryParam("doorWidthRangeId"))
+		if err != nil {
+			return c.NoContent(http.StatusBadRequest)
 		}
-		if doorWidth.Max != -1 {
-			conditions = append(conditions, "door_width < ?")
-			params = append(params, doorWidth.Max)
-		}
+
+		conditions = append(conditions, "door_width_class = ?")
+		params = append(params, n)
 	}
 
 	if c.QueryParam("rentRangeId") != "" {
-		estateRent, err := getRange(estateSearchCondition.Rent, c.QueryParam("rentRangeId"))
+		_, err := getRange(estateSearchCondition.Rent, c.QueryParam("rentRangeId"))
 		if err != nil {
 			c.Echo().Logger.Infof("rentRangeID invalid, %v : %v", c.QueryParam("rentRangeId"), err)
 			return c.NoContent(http.StatusBadRequest)
 		}
 
-		if estateRent.Min != -1 {
-			conditions = append(conditions, "rent >= ?")
-			params = append(params, estateRent.Min)
+		n, err := strconv.Atoi(c.QueryParam("rentRangeId"))
+		if err != nil {
+			return c.NoContent(http.StatusBadRequest)
 		}
-		if estateRent.Max != -1 {
-			conditions = append(conditions, "rent < ?")
-			params = append(params, estateRent.Max)
-		}
+
+		conditions = append(conditions, "rent_class = ?")
+		params = append(params, n)
 	}
 
 	if c.QueryParam("features") != "" {
