@@ -13,6 +13,7 @@ CREATE TABLE isuumo.estate
     address           VARCHAR(128)        NOT NULL,
     latitude          DOUBLE PRECISION    NOT NULL,
     longitude         DOUBLE PRECISION    NOT NULL,
+    point             POINT               AS (POINT(latitude, longitude)),
     rent              INTEGER             NOT NULL,
     rent_class        INTEGER             AS (
       CASE
