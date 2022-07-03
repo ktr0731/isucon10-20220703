@@ -40,13 +40,25 @@ CREATE TABLE isuumo.estate
         ELSE 3
       END
     ),
+    door_min_edge INTEGER AS (
+      CASE
+        WHEN door_width < door_height THEN door_width
+        ELSE door_height
+      END
+    ),
+    door_max_edge INTEGER AS (
+      CASE
+        WHEN door_width > door_height THEN door_width
+        ELSE door_height
+      END
+    ),
     features    VARCHAR(64)         NOT NULL,
     popularity  INTEGER             NOT NULL,
     neg_popularity  INTEGER         AS (1000000 - popularity),
     INDEX door_height_class_index(door_height_class),
     INDEX door_width_class_index(door_width_class),
     INDEX rent_class_index(rent_class),
-    INDEX neg_popularity_index(neg_popularity)
+    INDEX neg_popularity(neg_popularity, id)
 );
 
 CREATE TABLE isuumo.chair
@@ -63,6 +75,8 @@ CREATE TABLE isuumo.chair
     features    VARCHAR(64)     NOT NULL,
     kind        VARCHAR(64)     NOT NULL,
     popularity  INTEGER         NOT NULL,
+    neg_popularity  INTEGER     AS (1000000 - popularity),
     stock       INTEGER         NOT NULL,
-    INDEX price_id(price, id)
+    INDEX price_id(price, id),
+    INDEX neg_popularity_id(neg_popularity, id)
 );
