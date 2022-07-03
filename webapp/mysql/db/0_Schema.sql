@@ -13,7 +13,8 @@ CREATE TABLE isuumo.estate
     address           VARCHAR(128)        NOT NULL,
     latitude          DOUBLE PRECISION    NOT NULL,
     longitude         DOUBLE PRECISION    NOT NULL,
-    point             POINT               AS (POINT(latitude, longitude)),
+    -- point             POINT               AS (POINT(latitude, longitude)) STORED NOT NULL,
+    point             POINT               NOT NULL DEFAULT POINT(0, 0),
     rent              INTEGER             NOT NULL,
     rent_class        INTEGER             AS (
       CASE
@@ -59,7 +60,8 @@ CREATE TABLE isuumo.estate
     INDEX door_height_class_index(door_height_class),
     INDEX door_width_class_index(door_width_class),
     INDEX rent_class_index(rent_class),
-    INDEX neg_popularity(neg_popularity, id)
+    INDEX neg_popularity(neg_popularity, id),
+    SPATIAL INDEX point_index(point)
 );
 
 CREATE TABLE isuumo.chair

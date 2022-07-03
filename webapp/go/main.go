@@ -319,6 +319,11 @@ func initialize(c echo.Context) error {
 		}
 	}
 
+	if _, err := db.Exec("UPDATE estate SET point = POINT(latitude, longitude)"); err != nil {
+		c.Echo().Logger.Errorf("failed to fill point: %v", err)
+		return c.NoContent(http.StatusInternalServerError)
+	}
+
 	return c.JSON(http.StatusOK, InitializeResponse{
 		Language: "go",
 	})
